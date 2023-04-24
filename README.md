@@ -18,9 +18,7 @@ npm run build
 npm run start
 ```
 
-**Note**: program may crash after rate limit response from snapshot. Re-run program to reload cached data and process remaining proposals.
-
-## Answers
+**Note**: program may crash after rate limit response from snapshot. Re-run program to reload cached data and process remaining proposals. It typically takes 2 runs to go through all votes.
 
 #### Assumptions / Implementation Details
 
@@ -30,7 +28,9 @@ npm run start
 4. Progress is saved after each run inside `/data`
 5. Process will take several minutes to finish
 
-#### Top 20 Addresses by participation
+## Answers
+
+#### Top 20 Addresses by participation in Aave governance proposals on snapshot.org
 
 1. 0x0516cf37B67235E07aF38ad8E388d0E68089b0F2 - 261 votes
 2. 0x7A3BdeE62dd34faC317Ae61cd8B3bA7c27ada145 - 261 votes
