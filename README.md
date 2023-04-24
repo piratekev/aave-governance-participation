@@ -22,12 +22,13 @@ npm run start
 
 ## Answers
 
-#### Assumptions / Implementation Decisions
+#### Assumptions / Implementation Details
 
 1. Votes on closed proposals do not change
 2. Multiple votes on one proposal are only counted once
 3. Script iterates through proposals one by one starting with first proposal created
 4. Progress is saved after each run inside `/data`
+5. Process will take several minutes to finish
 
 #### Top 20 Addresses by participation
 
@@ -54,4 +55,4 @@ npm run start
 
 #### UPenn participation
 
-UPenn has voted on 182 of 288 proposals
+UPenn (0x070341aA5Ed571f0FB2c4a5641409B1A46b4961b) has voted on 182 of 288 proposals
