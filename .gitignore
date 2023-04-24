@@ -1,0 +1,8 @@
+# Ignore build folder
+dist
+
+# Ignore node_modules
+node_modules
+
+# Ignore cached data
+data

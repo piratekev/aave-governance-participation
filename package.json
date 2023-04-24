@@ -1,0 +1,20 @@
+{
+  "name": "aave-governance-participation",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "",
+  "main": "dist/index.js",
+  "scripts": {
+    "start": "NODE_PATH=./build node dist/app.js",
+    "build": "tsc -p ."
+  },
+  "license": "ISC",
+  "dependencies": {
+    "graphql": "^16.6.0",
+    "graphql-request": "^6.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^16.9.4",
+    "ts-node": "^10.2.1"
+  }
+}
