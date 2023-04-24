@@ -14,3 +14,14 @@ export const loadDataFromFile = (fileName: string) => {
     return false;
   }
 };
+
+export const loadTypedSetDataFromFile = (fileName: string) => {
+  try {
+    const fileStr = fs.readFileSync(fileName, "utf8");
+    if (fileStr) {
+      return new Map<string, [string]>(JSON.parse(fileStr));
+    }
+  } catch (err) {
+    return false;
+  }
+};

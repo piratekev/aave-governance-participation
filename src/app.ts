@@ -1,9 +1,14 @@
-import { writeDataToFile, loadDataFromFile } from "./utils/fileUtils.js";
+import {
+  writeDataToFile,
+  loadDataFromFile,
+  loadTypedSetDataFromFile,
+} from "./utils/fileUtils.js";
 import { getProposals, getVotes } from "./utils/queries.js";
 
 const maxResponseSize = 1000;
 const participationMap = new Map(); // { voter_address: num_votes }
 const proposalsProgress = new Map(); // { proposal_id: last_timestamp_checked (0 -> not processed, -1 -> status closed and all votes counted) }
+const proposalVoters = new Map(); // { proposal_id: Set<voters> } used to save/reload voters on a proposal for deduping if crashed
 const proposalsList = new Array(); // { proposalId, state, created }
 const space = "aave.eth";
 var numProposals = 0;
@@ -52,20 +57,30 @@ const checkVotesForProposal = async (proposal: {
 }) => {
   var startingTimestamp = proposalsProgress.get(proposal.id);
   var votesResp = await getVotes(startingTimestamp, proposal.id);
-  const votersForProposal = new Set<string>();
+  var votersForProposal;
+  // reload stored list of voters for proposal id
+  if (proposalVoters.has(proposal.id)) {
+    votersForProposal = new Set<string>(proposalVoters.get(proposal.id));
+  } else {
+    votersForProposal = new Set<string>();
+  }
   // paginate queries with created_gte: created timestamp
   while (votesResp.votes.length === 1000) {
     processVotes(votesResp.votes, votersForProposal);
     startingTimestamp = votesResp.votes[maxResponseSize - 1].created;
     proposalsProgress.set(proposal.id, startingTimestamp);
+    proposalVoters.set(proposal.id, Array.from(votersForProposal));
     votesResp = await getVotes(startingTimestamp, proposal.id);
   }
   processVotes(votesResp.votes, votersForProposal);
+  proposalVoters.set(proposal.id, Array.from(votersForProposal));
   // set last_timestamp_checked to 0 if voting not started
   var lastTimestamp = 0;
   // set last_timestamp_checked to -1 if proposal closed and all votes counted
   if (proposal.state == "closed") {
     lastTimestamp = -1;
+    // finished processing this proposal - no need to save list of voters
+    proposalVoters.delete(proposal.id);
     // set last_timestamp_checked to last timestamp checked if proposal not closed
   } else if (votesResp.votes.length > 0) {
     lastTimestamp = votesResp.votes[votesResp.votes.length - 1].created;
@@ -98,23 +113,35 @@ const getAllRemainingProposals = async (space: string) => {
   processProposals(proposalsResp.proposals);
 };
 
-// load cached votes into participationMap
-const loadCachedVotes = async (space: string) => {
+// load cached voters into participationMap and list of voters for unfinished proposals into proposalVoters map
+const loadCachedVoters = async (space: string) => {
   try {
     const cachedVoterData = await loadDataFromFile(
       "./data/" + space + "-voters.json"
+    );
+    const cachedVoterDataDedup = await loadTypedSetDataFromFile(
+      "./data/" + space + "-voters-dedup.json"
     );
     if (cachedVoterData) {
       for (var voter of cachedVoterData.entries()) {
         participationMap.set(voter[0], voter[1]);
       }
     }
+    if (cachedVoterDataDedup) {
+      for (var proposalVoterSet of cachedVoterDataDedup.entries()) {
+        proposalVoters.set(
+          proposalVoterSet[0],
+          Array.from(proposalVoterSet[1])
+        );
+      }
+    }
   } catch (err) {
+    console.log(err);
     console.log("no cached voter data to load");
   }
 };
 
-await loadCachedVotes(space);
+await loadCachedVoters(space);
 await getAllRemainingProposals(space);
 console.log("cached votes - " + participationMap.size);
 var proposalsRemaining = proposalsList.length;
@@ -137,6 +164,7 @@ try {
 }
 
 // save current state
+writeDataToFile("./data/" + space + "-voters-dedup.json", [...proposalVoters]);
 writeDataToFile("./data/" + space + "-voters.json", [...participationMap]);
 writeDataToFile("./data/" + space + "-proposals.json", [...proposalsProgress]);
 
@@ -148,7 +176,16 @@ console.log("----- Top 20 adresses by participation -----");
 var numAddresses = 0;
 for (var address of sortedParticipation) {
   numAddresses++;
-  console.log(numAddresses + ". " + address[0] + " - " + address[1] + " votes");
+  console.log(
+    numAddresses +
+      ". " +
+      address[0] +
+      " - " +
+      address[1] +
+      " votes on " +
+      numProposals +
+      " proposals"
+  );
   if (numAddresses == 20) {
     break;
   }
