@@ -2,8 +2,8 @@
 
 ### Dependencies
 
-- Node v15.4.0 (I recommend using NVM)
-- NPM v7.7.6
+- Node v16 or greater (I recommend using NVM - `nvm use 16`)
+- NPM v7 or greater
 
 ### Building
 
